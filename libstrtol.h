@@ -13,6 +13,6 @@
 #include <fcntl.h>
 #include <errno.h>
 
-int** int_deserialize(char* string, int *return_row, int *return_col);
+int* int_deserialize(char* string, int *return_row, int *return_col);
 
 #endif /*libstrtol.h*/

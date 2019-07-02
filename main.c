@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     char *start, *end;
     int row, col, i, j;
     size_t data_len = 16;
-    int **strtol_matrix = NULL;
+    int *strtol_matrix = NULL;
     uint64_t strtol_transform_time = 0;
     struct timeval start_time, end_time;
 
@@ -38,9 +38,6 @@ int main(int argc, char** argv) {
     printf("row: %d, col: %d\n", row, col);
     printf("strtol transform time: %lu usec\n", strtol_transform_time);
     
-    for (i = 0; i < row; i++) {
-        free(strtol_matrix[i]);
-    }
     free(strtol_matrix);
     free(start);
     close(fd);
