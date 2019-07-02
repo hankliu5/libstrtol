@@ -1,3 +1,5 @@
+#cython: language_level=3
+
 """ Small Cython file to demonstrate the use of PyArray_SimpleNewFromData
 in Cython to create an array from already allocated memory.
 Cython enables mixing C-level calls and Python-level calls in the same
@@ -75,14 +77,13 @@ def cython_deserialize(char *string):
     # Call the C function
     array = int_deserialize(string, &row, &col)
 
-    array_wrapper = MatrixWrapper()
-    array_wrapper.set_data(row, col, <void*> array) 
-    ndarray = np.array(array_wrapper, copy=False)
+    matrix_wrapper = MatrixWrapper()
+    matrix_wrapper.set_data(row, col, <void*> array) 
+    ndarray = np.array(matrix_wrapper, copy=False)
     # Assign our object to the 'base' of the ndarray object
-    ndarray.base = <PyObject*> array_wrapper
+    ndarray.base = <PyObject*> matrix_wrapper
     # Increment the reference count, as the above assignement was done in
     # C, and Python does not know that there is this additional reference
-    Py_INCREF(array_wrapper)
-
+    Py_INCREF(matrix_wrapper)
 
     return ndarray
