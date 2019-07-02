@@ -3,22 +3,19 @@
 #include <numpy/arrayobject.h>
 
 int* int_deserialize(char* string, int *return_row, int *return_col) {
-    int *return_matrix = NULL;
-    char *start, *end;
-    const char delimiter[2] = "\n";
+    int *return_matrix = NULL, *pointer = NULL;
+    char *start;
     int row, col;
     int i, j;
-
-    start = strtok(string, delimiter);
-    row = (int) strtol(start, &end, 10);
-    start = end;
+    start = string;
+    row = (int) strtol(start, &start, 10);
     if (errno == ERANGE){
         printf("range error, got ");
         errno = 0;
         return return_matrix;
     }
 
-    col = (int) strtol(start, &end, 10);
+    col = (int) strtol(start, &start, 10);
     if (errno == ERANGE){
         printf("range error, got ");
         errno = 0;
@@ -27,12 +24,11 @@ int* int_deserialize(char* string, int *return_row, int *return_col) {
     printf("row: %d, col: %d\n", row, col);
 
     return_matrix = calloc(row * col, sizeof(int *));
-
+    pointer = return_matrix;
     for (i = 0; i < row; i++) {
-        start = strtok(NULL, delimiter);
-
         for (j = 0; j < col; j++) {
-            *(return_matrix + i*col + j) = (int) strtol(start, &start, 10);
+            *pointer = (int) strtol(start, &start, 10);
+            pointer++;
         }
     }
     *return_row = row;
@@ -56,7 +52,7 @@ static PyObject *PyInt_Deserialize(PyObject *self, PyObject *args) {
     dims[0] = row;
     dims[1] = col;
     return_array = PyArray_SimpleNewFromData(2, dims, NPY_INT, (void *) deserialized_matrix);
-    PyArray_ENABLEFLAGS(return_array, NPY_OWNDATA);
+    PyArray_ENABLEFLAGS((PyArrayObject *)return_array, NPY_OWNDATA);
     return return_array;
 }
 
