@@ -1,4 +1,4 @@
-import hello
+import py_deserialize
 import numpy
 import pandas
 import time
@@ -20,7 +20,7 @@ end = time.time()
 read_time = end - start
 
 start = time.time()
-a = hello.deserialize(s)
+a = py_deserialize.deserialize(s)
 end = time.time()
 strtol_transform_time = end - start
 f.close()
