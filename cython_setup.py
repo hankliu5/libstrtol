@@ -16,11 +16,16 @@ def configuration(parent_package='', top_path=None):
     # The configuration object that hold information on all the files
     # to be built.
     config = Configuration('', parent_package, top_path)
+    config.add_extension('kmcuda_wrapper',
+                         sources=['kmcuda_wrapper.pyx'],
+                         libraries=['KMCUDA'],
+                         include_dirs=[numpy.get_include()])
     config.add_extension('cython_wrapper',
                          sources=['cython_wrapper.pyx'],
                          depends=['libstrtol.c'],
                          include_dirs=[numpy.get_include()])
     return config
+
 
 
 if __name__ == '__main__':
