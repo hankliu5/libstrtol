@@ -49,8 +49,17 @@ c = cython_wrapper.cython_deserialize3(s)
 duration = time.time() - start
 print("customized cython without wrapper elapsed time: {}".format(duration))
 
+start = time.time()
+s, d, i, j = cython_wrapper.cython_deserialize4(s, 262144*256)
+d = cython_wrapper.cython_deserialize5(s, d, i, j)
+
+duration = time.time() - start
+print("customized cython without wrapper elapsed time: {}".format(duration))
+
 print("a, b are the same: {}".format(numpy.array_equal(a, b)))
 print("b, c are the same: {}".format(numpy.array_equal(b, c)))
+print("c, d are the same: {}".format(numpy.array_equal(c, d)))
+
 
 # start = time.time()
 # f = open(sys.argv[1], 'r')

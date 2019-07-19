@@ -16,6 +16,7 @@ cdef extern from "libstrtol.c":
 
 from libc.stdlib cimport free, strtol, calloc
 from cpython cimport PyObject, Py_INCREF
+# from libc.time cimport clock_gettime, timespec
 
 # Import the Python-level symbols of numpy
 import numpy as np
@@ -28,9 +29,19 @@ cimport cython
 # _always_ do that, or you will have segfaults
 np.import_array()
 
+# cdef timespec diff(timespec start, timespec end):
+#     cdef timespec temp
+#     if (end.tv_nsec-start.tv_nsec) < 0:
+#         temp.tv_sec = end.tv_sec-start.tv_sec-1;
+#         temp.tv_nsec = 1000000000 + end.tv_nsec-start.tv_nsec;
+#     else:
+#         temp.tv_sec = end.tv_sec-start.tv_sec;
+#         temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+
+#     return temp 
+
 # We need to build an array-wrapper class to deallocate our array when
 # the Python object is deleted.
-
 cdef class MatrixWrapper:
     cdef void* data_ptr
     cdef int row
@@ -142,6 +153,61 @@ def cython_deserialize3(char *string):
     
     with nogil:
         for i from 0 <= i < row:
+            for j from 0 <= j < col:
+                result_view[i, j] = <int> strtol(start, &start, 10);
+
+    return result
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def cython_deserialize4(char *string, int num_per_iter):
+    """ Python binding of the 'compute' function in 'c_code.c' that does
+        not copy the data allocated in C.
+    """
+    cdef char* start
+    cdef int row, col, curr_iter
+    
+    start = string
+    # Call the C function
+    row = <int> strtol(start, &start, 10);
+    col = <int> strtol(start, &start, 10);
+    result = np.zeros((row, col), dtype=np.int32)
+    cdef int[:, :] result_view = result
+    
+    curr_iter = 0
+    for i from 0 <= i < row:
+        for j from 0 <= j < col:            
+            if curr_iter == num_per_iter:
+                return start, result, i, j
+            result_view[i, j] = <int> strtol(start, &start, 10);
+            curr_iter += 1 
+
+
+    return b'', result, row, col
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def cython_deserialize5(char *string, int[:, :] result, int curr_row, int curr_col):
+    """ Python binding of the 'compute' function in 'c_code.c' that does
+        not copy the data allocated in C.
+    """    
+    cdef Py_ssize_t row = result.shape[0]
+    cdef Py_ssize_t col = result.shape[1]
+    if curr_row == row:
+        return result
+
+    cdef char* start = string
+    cdef int[:, :] result_view = result
+    
+    with nogil:
+        for j from curr_col <= j < col:
+            result_view[curr_row, j] = <int> strtol(start, &start, 10);
+    
+    curr_col = 0
+    curr_row += 1
+
+    with nogil:    
+        for i from curr_row <= i < row:
             for j from 0 <= j < col:
                 result_view[i, j] = <int> strtol(start, &start, 10);
 
