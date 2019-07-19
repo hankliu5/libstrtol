@@ -5,6 +5,7 @@ import time
 import sys
 import cython_wrapper
 import kmcuda_wrapper
+import libKMCUDA
 
 if len(sys.argv) < 2:
     print("usage {} [input data]".format(sys.argv[0]))
@@ -67,7 +68,8 @@ end = time.time()
 print("float transform elapsed time: {}".format(end - start))
 
 start = time.time()
-kmcuda_wrapper.cython_kmeans_cuda(0.01, 0.1, 5, 0x5, 0, -1, 0, 0, b);
+libKMCUDA.kmeans_cuda(samples=b, clusters=5, tolerance=0.01, yinyang_t=0.1, metric="L2", device=0, verbosity=0, seed=0x5);
+# kmcuda_wrapper.cython_kmeans_cuda(0.01, 0.1, 5, 0x5, 0, -1, 0, 0, b);
 end = time.time()
 
 print("kmeans elapsed time: {}".format(end - start))

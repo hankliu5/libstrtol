@@ -50,15 +50,25 @@ int main(int argc, char** argv) {
     centroids = calloc(clusters_size * col, sizeof(float));
     assignments = calloc(row, sizeof(uint32_t));
 
+    // temp part
+    // stream = fopen("output.txt", "w");
+    // fprintf(stream, "%d %d\n", row, col);
+    // for (i = 0; i < row; i++) {
+    //     fprintf(stream, "%d", strtol_matrix[i*col]);
+    //     for (j = 1; j < col; j++) {
+    //         fprintf(stream, " %d", strtol_matrix[i*col+j]);
+    //     }
+    //     fprintf(stream, "\n");
+    // }
+    // fclose(stream);
+    // temp part end
+
     gettimeofday(&start_time, NULL);
     for (i = 0; i < total_size; i++) {
-        samples[i] = strtol_matrix[i] * 1.0f;
+        samples[i] = (float) strtol_matrix[i];
     }
     gettimeofday(&end_time, NULL);
     float_transform_time = ((end_time.tv_sec * 1000000 + end_time.tv_usec) - (start_time.tv_sec * 1000000 + start_time.tv_usec));
-
-    free(strtol_matrix);
-    free(start);
     
     gettimeofday(&start_time, NULL);
     result = kmeans_cuda(
@@ -76,7 +86,8 @@ int main(int argc, char** argv) {
     gettimeofday(&end_time, NULL);
     compute_time = ((end_time.tv_sec * 1000000 + end_time.tv_usec) - (start_time.tv_sec * 1000000 + start_time.tv_usec));
 
-    
+    free(strtol_matrix);
+    free(start);
     free(samples);
     free(centroids);
     free(assignments);
