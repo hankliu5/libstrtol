@@ -21,7 +21,7 @@ int* int_deserialize(char* string, int *return_row, int *return_col) {
     }
     printf("row: %d, col: %d\n", row, col);
 
-    return_matrix = calloc(row * col, sizeof(int *));
+    return_matrix = calloc(row * col, sizeof(int));
     pointer = return_matrix;
     for (i = 0; i < row; i++) {
         for (j = 0; j < col; j++) {
