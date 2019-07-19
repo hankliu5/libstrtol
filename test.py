@@ -28,20 +28,29 @@ if len(sys.argv) < 2:
 # print("read time: {}".format(read_time))
 # print("c api elapsed time: {}".format(strtol_transform_time))
 
-start = time.time()
-f = open(sys.argv[1], 'rb')
-s = f.read()
-end = time.time()
-read_time = end - start
+with open(sys.argv[1], 'rb') as f:
+    start = time.time()
+    s = f.read()
+    duration = time.time() - start
+    print("read time: {}".format(duration))
 
 start = time.time()
-b = cython_wrapper.cython_deserialize(s)
-end = time.time()
-strtol_transform_time = end - start
+a = cython_wrapper.cython_deserialize(s)
+duration = time.time() - start
+print("cython elapsed time: {}".format(duration))
 
-f.close()
-print("read time: {}".format(read_time))
-print("cython elapsed time: {}".format(strtol_transform_time))
+start = time.time()
+b = cython_wrapper.cython_deserialize2(s)
+duration = time.time() - start
+print("customized cython elapsed time: {}".format(duration))
+
+start = time.time()
+c = cython_wrapper.cython_deserialize3(s)
+duration = time.time() - start
+print("customized cython without wrapper elapsed time: {}".format(duration))
+
+print("a, b are the same: {}".format(numpy.array_equal(a, b)))
+print("b, c are the same: {}".format(numpy.array_equal(b, c)))
 
 # start = time.time()
 # f = open(sys.argv[1], 'r')
@@ -62,14 +71,13 @@ print("cython elapsed time: {}".format(strtol_transform_time))
 
 # print('same: {}'.format(numpy.array_equal(a, b) and numpy.array_equal(a, c)))
 
-start = time.time()
-b = b.astype('float32')
-end = time.time()
-print("float transform elapsed time: {}".format(end - start))
+# start = time.time()
+# b = b.astype('float32')
+# duration = time.time() - start
+# print("float transform elapsed time: {}".format(duration))
 
-start = time.time()
-libKMCUDA.kmeans_cuda(samples=b, clusters=5, tolerance=0.01, yinyang_t=0.1, metric="L2", device=0, verbosity=0, seed=0x5);
-# kmcuda_wrapper.cython_kmeans_cuda(0.01, 0.1, 5, 0x5, 0, -1, 0, 0, b);
-end = time.time()
-
-print("kmeans elapsed time: {}".format(end - start))
+# start = time.time()
+# libKMCUDA.kmeans_cuda(samples=b, clusters=5, tolerance=0.01, yinyang_t=0.1, metric="L2", device=0, verbosity=0, seed=0x5);
+# # kmcuda_wrapper.cython_kmeans_cuda(0.01, 0.1, 5, 0x5, 0, -1, 0, 0, b);
+# duration = time.time() - start
+# print("kmeans elapsed time: {}".format(duration))

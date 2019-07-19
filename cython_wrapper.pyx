@@ -14,7 +14,7 @@ http://cython.org for more information
 cdef extern from "libstrtol.c":
     int* int_deserialize(char* string, int *return_row, int *return_col)
 
-from libc.stdlib cimport free
+from libc.stdlib cimport free, strtol, calloc
 from cpython cimport PyObject, Py_INCREF
 
 # Import the Python-level symbols of numpy
@@ -22,6 +22,7 @@ import numpy as np
 
 # Import the C-level symbols of numpy
 cimport numpy as np
+cimport cython
 
 # Numpy must be initialized. When using numpy from C or Cython you must
 # _always_ do that, or you will have segfaults
@@ -87,3 +88,61 @@ def cython_deserialize(char *string):
     Py_INCREF(matrix_wrapper)
 
     return ndarray
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def cython_deserialize2(char *string):
+    """ Python binding of the 'compute' function in 'c_code.c' that does
+        not copy the data allocated in C.
+    """
+    cdef int *array
+    cdef char* start
+    cdef np.ndarray ndarray
+    cdef int row, col, total
+
+    start = string
+    # Call the C function
+    row = <int> strtol(start, &start, 10);
+    col = <int> strtol(start, &start, 10);
+    total = row * col
+    
+    array = <int *> calloc(row * col, sizeof(int))
+
+    with nogil:
+        for i from 0 <= i < total:
+            array[i] = <int> strtol(start, &start, 10);                
+
+    matrix_wrapper = MatrixWrapper()
+    matrix_wrapper.set_data(row, col, <void*> array) 
+    ndarray = np.array(matrix_wrapper, copy=False)
+
+    # Assign our object to the 'base' of the ndarray object
+    ndarray.base = <PyObject*> matrix_wrapper
+    # Increment the reference count, as the above assignement was done in
+    # C, and Python does not know that there is this additional reference
+    Py_INCREF(matrix_wrapper)
+
+    return ndarray
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def cython_deserialize3(char *string):
+    """ Python binding of the 'compute' function in 'c_code.c' that does
+        not copy the data allocated in C.
+    """
+    cdef char* start
+    cdef int row, col
+    
+    start = string
+    # Call the C function
+    row = <int> strtol(start, &start, 10);
+    col = <int> strtol(start, &start, 10);
+    result = np.zeros((row, col), dtype=np.int32)
+    cdef int[:, :] result_view = result
+    
+    with nogil:
+        for i from 0 <= i < row:
+            for j from 0 <= j < col:
+                result_view[i, j] = <int> strtol(start, &start, 10);
+
+    return result
