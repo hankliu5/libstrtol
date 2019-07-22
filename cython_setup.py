@@ -23,6 +23,7 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('cython_wrapper',
                          sources=['cython_wrapper.pyx'],
                          depends=['libstrtol.c'],
+                         libraries=['m'],
                          include_dirs=[numpy.get_include()])
     return config
 

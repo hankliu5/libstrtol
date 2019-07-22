@@ -14,6 +14,9 @@ http://cython.org for more information
 cdef extern from "libstrtol.c":
     int* int_deserialize(char* string, int *return_row, int *return_col)
 
+cdef extern from "math.h":
+    double sqrt(double m)
+
 from libc.stdlib cimport free, strtol, calloc
 from cpython cimport PyObject, Py_INCREF
 # from libc.time cimport clock_gettime, timespec
@@ -77,6 +80,21 @@ cdef class MatrixWrapper:
         """ Frees the array. This is called by Python when all the
         references to the object are gone. """
         free(<void*>self.data_ptr)
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def cython_stddev(np.ndarray[np.float64_t, ndim=1] a not None):
+    cdef Py_ssize_t i
+    cdef Py_ssize_t n = a.shape[0]
+    cdef double mean = 0.0
+    for i in range(n):
+        mean += a[i]
+    mean /= n
+    cdef double var = 0.0
+    for i in range(n):
+        var += (a[i] - mean)**2
+    return sqrt(var / n)
 
 
 def cython_deserialize(char *string):
@@ -165,23 +183,38 @@ def cython_deserialize4(char *string, int num_per_iter):
         not copy the data allocated in C.
     """
     cdef char* start
-    cdef int row, col, curr_iter
+    cdef int row, col, curr_iter, num_elem_in_time_arr, index_time_arr
+    cdef double std, curr_time
+    cdef int time_arr_size = 10
     
     start = string
     # Call the C function
     row = <int> strtol(start, &start, 10);
     col = <int> strtol(start, &start, 10);
+    time_arr = np.zeros(time_arr_size, dtype=np.float64)
     result = np.zeros((row, col), dtype=np.int32)
     cdef int[:, :] result_view = result
     
     curr_iter = 0
+    num_elem_in_time_arr = 0
+    index_time_arr = 0
+
     for i from 0 <= i < row:
         for j from 0 <= j < col:            
             if curr_iter == num_per_iter:
-                return start, result, i, j
+                curr_time = 10.0
+                if num_elem_in_time_arr < time_arr_size:
+                    num_elem_in_time_arr += 1
+                elif num_elem_in_time_arr >= time_arr_size:
+                    std = cython_stddev(time_arr)
+                    if curr_time >= 2 * std:
+                        return start, result, i, j
+                time_arr[index_time_arr] = curr_time
+                index_time_arr += 1
+                index_time_arr %= time_arr_size
+                curr_iter = 0
             result_view[i, j] = <int> strtol(start, &start, 10);
             curr_iter += 1 
-
 
     return b'', result, row, col
 
@@ -197,7 +230,10 @@ def cython_deserialize5(char *string, np.ndarray[dtype=np.int32_t, ndim=2, mode=
         return result
 
     cdef char* start = string
-    cdef int[:, :] result_view = result
+    cdef np.ndarray ndarray
+    
+    ndarray = np.array(result, copy=True)
+    cdef int[:, :] result_view = ndarray
     
     with nogil:
         for j from curr_col <= j < col:
@@ -211,4 +247,4 @@ def cython_deserialize5(char *string, np.ndarray[dtype=np.int32_t, ndim=2, mode=
             for j from 0 <= j < col:
                 result_view[i, j] = <int> strtol(start, &start, 10);
 
-    return result
+    return ndarray
