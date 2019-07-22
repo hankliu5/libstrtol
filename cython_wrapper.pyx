@@ -187,7 +187,7 @@ def cython_deserialize4(char *string, int num_per_iter):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def cython_deserialize5(char *string, int[:, :] result, int curr_row, int curr_col):
+def cython_deserialize5(char *string, np.ndarray[dtype=np.int32_t, ndim=2, mode='c'] result, int curr_row, int curr_col):
     """ Python binding of the 'compute' function in 'c_code.c' that does
         not copy the data allocated in C.
     """    
