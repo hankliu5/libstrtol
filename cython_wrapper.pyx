@@ -19,7 +19,7 @@ cdef extern from "math.h":
 
 from libc.stdlib cimport free, strtol, calloc
 from cpython cimport PyObject, Py_INCREF
-# from libc.time cimport clock_gettime, timespec
+from posix.time cimport clock_gettime, timespec, CLOCK_MONOTONIC_COARSE
 
 # Import the Python-level symbols of numpy
 import numpy as np
@@ -32,16 +32,15 @@ cimport cython
 # _always_ do that, or you will have segfaults
 np.import_array()
 
-# cdef timespec diff(timespec start, timespec end):
-#     cdef timespec temp
-#     if (end.tv_nsec-start.tv_nsec) < 0:
-#         temp.tv_sec = end.tv_sec-start.tv_sec-1;
-#         temp.tv_nsec = 1000000000 + end.tv_nsec-start.tv_nsec;
-#     else:
-#         temp.tv_sec = end.tv_sec-start.tv_sec;
-#         temp.tv_nsec = end.tv_nsec-start.tv_nsec;
-
-#     return temp 
+cdef long time_diff(timespec *start, timespec *end):
+    cdef timespec temp
+    if (end.tv_nsec - start.tv_nsec) < 0:
+        temp.tv_sec = end.tv_sec - start.tv_sec - 1;
+        temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec
+    else:
+        temp.tv_sec = end.tv_sec - start.tv_sec
+        temp.tv_nsec = end.tv_nsec - start.tv_nsec
+    return (temp.tv_sec * 1000000000) + temp.tv_nsec
 
 # We need to build an array-wrapper class to deallocate our array when
 # the Python object is deleted.
@@ -248,3 +247,35 @@ def cython_deserialize5(char *string, np.ndarray[dtype=np.int32_t, ndim=2, mode=
                 result_view[i, j] = <int> strtol(start, &start, 10);
 
     return ndarray
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def cython_deserialize6(char *string, int num_per_iter, long timeout_in_sec):
+    """ Python binding of the 'compute' function in 'c_code.c' that does
+        not copy the data allocated in C.
+    """
+    cdef char* start
+    cdef int row, col, curr_iter = 0
+    cdef long timeout_in_ns = timeout_in_sec * 1000000000l
+    cdef timespec start_time, curr_time, temp_time
+    
+    clock_gettime(CLOCK_MONOTONIC_COARSE, &start_time)
+    start = string
+
+    # Call the C function
+    row = <int> strtol(start, &start, 10);
+    col = <int> strtol(start, &start, 10);
+    result = np.zeros((row, col), dtype=np.int32)
+    cdef int[:, :] result_view = result
+    
+    for i from 0 <= i < row:
+        for j from 0 <= j < col:            
+            if curr_iter == num_per_iter:
+                clock_gettime(CLOCK_MONOTONIC_COARSE, &curr_time)
+                if time_diff(&start_time, &curr_time) > timeout_in_ns:
+                    return start, result, i, j
+                curr_iter = 0
+            result_view[i, j] = <int> strtol(start, &start, 10);
+            curr_iter += 1 
+
+    return b'', result, row, col

@@ -56,8 +56,17 @@ print("customized cython without wrapper elapsed time: {}".format(duration))
 # duration = time.time() - start
 # print("customized cython without wrapper with checkpoint elapsed time: {}".format(duration))
 
+# start = time.time()
+# s, e, i, j = cython_wrapper.cython_deserialize4(s, 262144)
+# if len(s) == 0:
+#     print('finished all string')
+# e = cython_wrapper.cython_deserialize5(s, e, i, j)
+
+# duration = time.time() - start
+# print("customized cython without checkpoint elapsed time: {}".format(duration))
+
 start = time.time()
-s, e, i, j = cython_wrapper.cython_deserialize4(s, 262144)
+s, e, i, j = cython_wrapper.cython_deserialize6(s, 262144, 5)
 if len(s) == 0:
     print('finished all string')
 e = cython_wrapper.cython_deserialize5(s, e, i, j)
@@ -69,6 +78,7 @@ print("customized cython without checkpoint elapsed time: {}".format(duration))
 # print("b, c are the same: {}".format(numpy.array_equal(b, c)))
 # print("c, d are the same: {}".format(numpy.array_equal(c, d)))
 print("c, e are the same: {}".format(numpy.array_equal(c, e)))
+# print("c, e are the same: {}".format(numpy.array_equal(c, f)))
 
 
 
